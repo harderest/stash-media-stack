@@ -1,0 +1,159 @@
+query FindScenes($filter: FindFilterType, $scene_filter: SceneFilterType, $scene_ids: [Int!]) {
+        findScenes(filter: $filter, scene_filter: $scene_filter, scene_ids: $scene_ids) {
+                count
+                filesize
+                duration
+                scenes {
+                        ...Scene
+                        __typename
+                }
+                __typename
+        }
+}
+
+fragment Scene on Scene {
+        id
+        title
+        code
+        details
+        director
+        urls
+        date
+        rating100
+        organized
+        o_counter
+        interactive
+        interactive_speed
+        captions { ...VideoCaption }
+        created_at
+        updated_at
+        last_played_at
+        resume_time
+        play_duration
+        play_count
+        play_history
+        o_history
+        files { ...VideoFile }
+        paths { ...ScenePathsType }
+        scene_markers { ...SceneMarker }
+        galleries { id }
+        studio { id }
+        groups { ...SceneGroup }
+        tags { ...Tag }
+        performers { id }
+        stash_ids { ...StashID }
+        sceneStreams { ...SceneStreamEndpoint }
+}
+fragment SceneStreamEndpoint on SceneStreamEndpoint {
+        url
+        mime_type
+        label
+}
+fragment StashID on StashID {
+        endpoint
+        stash_id
+}
+fragment ScenePathsType on ScenePathsType {
+        screenshot
+        preview
+        stream
+        webp
+        vtt
+        sprite
+        funscript
+        interactive_heatmap
+        caption
+}
+fragment VideoCaption on VideoCaption {
+        language_code
+        caption_type
+}
+fragment SceneGroup on SceneGroup {
+        group { ...Group }
+        scene_index
+}
+fragment Tag on Tag {
+        id
+        name
+        description
+        aliases
+        ignore_auto_tag
+        created_at
+        updated_at
+        favorite
+        image_path
+        scene_count
+        scene_marker_count
+        image_count
+        gallery_count
+        performer_count
+        studio_count
+        group_count
+        parents { id }
+        children { id }
+        parent_count
+        child_count
+}
+fragment VideoFile on VideoFile {
+        id
+        path
+        basename
+        parent_folder_id
+        zip_file_id
+        mod_time
+        size
+        fingerprints { ...Fingerprint }
+        format
+        width
+        height
+        duration
+        video_codec
+        audio_codec
+        frame_rate
+        bit_rate
+        created_at
+        updated_at
+}
+fragment SceneMarker on SceneMarker {
+        id
+        scene { id }
+        title
+        seconds
+        primary_tag { ...Tag }
+        tags { ...Tag }
+        created_at
+        updated_at
+        stream
+        preview
+        screenshot
+}
+fragment Group on Group {
+        id
+        name
+        aliases
+        duration
+        date
+        rating100
+        studio { id }
+        director
+        synopsis
+        urls
+        tags { ...Tag }
+        created_at
+        updated_at
+        containing_groups { ...GroupDescription }
+        sub_groups { ...GroupDescription }
+        front_image_path
+        back_image_path
+        scene_count
+        sub_group_count
+        scenes { id }
+}
+fragment Fingerprint on Fingerprint {
+        type
+        value
+}
+fragment GroupDescription on GroupDescription {
+        group { ...Group }
+        description
+}

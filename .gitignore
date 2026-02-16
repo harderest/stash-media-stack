@@ -1,70 +1,33 @@
 # Environment (contains secrets)
 .env
 
-# Database files
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite-wal
-*.sqlite-shm
-
 # Logs
 *.log
 *.log.*
 logs/
 logs.db*
 
-# Backups (large)
-provision/*/Backups/
-
-# Binary blobs (stash thumbnails/screenshots - large and regenerable)
+# Binary blobs (stash thumbnails/screenshots - 134M, fully regenerable)
 provision/stash/config/blobs/
 
-# Media covers (regenerable from metadata)
-provision/*/MediaCover/
+# Whisparr scheduled backups (59M, redundant since we have git)
+provision/*/Backups/scheduled/
 
-# GeoIP database (auto-downloaded)
-provision/qbittorrent/qBittorrent/GeoDB/
-
-# qBittorrent logs and runtime
+# qBittorrent logs
 provision/qbittorrent/qBittorrent/logs/
+
+# qBittorrent runtime sockets
 provision/qbittorrent/qBittorrent/ipc-socket
 provision/qbittorrent/qBittorrent/lockfile
-
-# qBittorrent torrent state (runtime, not config)
-provision/qbittorrent/qBittorrent/BT_backup/
-
-# Deluge runtime and state
-provision/deluge/config/ssl/
-provision/deluge/config/state/
-provision/deluge/config/archive/
-provision/deluge/config/session.state
-provision/deluge/config/session.state.bak
-provision/deluge/config/*.bak
-
-# Prowlarr Definitions (auto-downloaded on start)
-provision/prowlarr/Definitions/
-
-# ASP data protection keys (auto-generated, machine-specific)
-provision/*/asp/
 
 # Sentry crash reports
 provision/*/Sentry/
 
-# Stash runtime/regenerable data
-provision/stash/metadata/
-provision/stash/cache/
-provision/stash/plugins/
-
-# XBVR data (runtime)
-provision/xbvr/data/
-
-# WhisparrV1 config (service commented out)
-provision/whisparrV1/
-
-# Notifiarr (optional, not part of core stack)
-provision/prowlarr/notifiarr.conf
+# SQLite WAL/SHM journal files (runtime, merged into main DB)
+*.db-shm
+*.db-wal
+*.sqlite-shm
+*.sqlite-wal
 
 # PID files
 *.pid
@@ -80,21 +43,3 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
-
-# Misc archives
-*.tar.xz
-*.tar.gz
-*.zip
-
-# Stash config backups (auto-generated)
-provision/stash/config/config.yml.*
-
-# Lock files
-*.lock
-
-# Shunned scenes (runtime state, regenerated)
-scripts/shunned_scenes.json
-scripts/stash_watcher/shunned_scenes.json
-
-# Example files
-scripts/example_*

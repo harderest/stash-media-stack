@@ -1,0 +1,97 @@
+---
+id: torrentz2eu
+name: Torrentz2eu
+description: "Torrentz2eu is a Public torrent meta-search engine"
+language: en-US
+type: public
+encoding: UTF-8
+requestDelay: 2
+links:
+  - https://torrentz2beta.online/
+legacylinks:
+  - https://torrentz2.org.in/
+  - https://torrentzeu.org/
+  - https://torrentz2.club/
+  - https://torrentz2eu.in/
+  - https://torrentz2.pics/
+  - https://2torrentz2eu.in/
+  - https://torrentz2.unblockninja.com/
+  - hhttps://torrentz2beta.com/
+  - https://torrentz2beta.com/
+  - https://torrentz2beta.in/
+  - https://eu.torrentz2beta.in/
+  - https://www.torrentz2beta.com/
+  - https://torrentz2beta.asia/
+  - https://www.torrentz2beta.pro/
+
+caps:
+  categorymappings:
+    - {id: TV, cat: TV, desc: TV}
+    - {id: Movies, cat: Movies, desc: Movies}
+
+  modes:
+    search: [q]
+    tv-search: [q, season, ep]
+    movie-search: [q]
+    music-search: [q]
+    book-search: [q]
+
+settings: []
+
+download:
+  selectors:
+    - selector: a[href^="magnet:?xt="]
+      attribute: href
+
+search:
+  paths:
+    # https://torrentz2beta.online/beta/search.php?q=2023
+    - path: beta/search.php
+    - path: beta/search.php
+      inputs:
+        page: 2
+  inputs:
+    q: "{{ if .Keywords }}{{ .Keywords }}{{ else }}{{ .Today.Year }}{{ end }}"
+
+  rows:
+    selector: table.selectable > tbody > tr
+
+  fields:
+    title:
+      selector: td:first-child
+    category_is_tv_show:
+      text: "{{ .Result.title }}"
+      filters:
+        - name: regexp
+          args: "\\b([S|s]\\d+(?:[E|e]\\d+)?)\\b"
+    category:
+      text: "{{ if .Result.category_is_tv_show }}TV{{ else }}Movies{{ end }}"
+    details:
+      selector: td:last-child > button
+      attribute: onclick
+      filters:
+        - name: replace
+          args: ["submitPage('", "page.php?url="]
+        - name: replace
+          args: ["')", ""]
+    download:
+      text: "{{ .Result.details }}"
+    seeders:
+      selector: td:nth-child(2)
+    leechers:
+      selector: td:nth-child(3)
+    size:
+      selector: td:nth-child(4)
+    date:
+      # Nov. 05th '23
+      selector: td:nth-child(5)
+      filters:
+        - name: re_replace
+          args: ["(\\.|'|st|nd|rd|th])", ""]
+        - name: dateparse
+          args: "MMM dd yy"
+    downloadvolumefactor:
+      text: 0
+    uploadvolumefactor:
+      text: 1
+# engine n/a
