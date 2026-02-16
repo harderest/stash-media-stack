@@ -197,18 +197,18 @@ show_one_time_moved_notification: false
 show_studio_as_text: false
 sound_on_preview: true
 stash:
-    - excludeimage: true
+    - path: /data/torrents-stash/tv-whisparr
+      excludevideo: true
+      excludeimage: true
+    - path: /data/torrents-stash/whisparr
+      excludevideo: true
+      excludeimage: true
+    - path: /data/media/tv-whisparr
       excludevideo: false
-      path: /data/torrents-stash/tv-whisparr
-    - excludeimage: true
+      excludeimage: true
+    - path: /data/media/whisparr
       excludevideo: false
-      path: /data/torrents-stash/whisparr
-    - excludeimage: true
-      excludevideo: false
-      path: /data/media/tv-whisparr
-    - excludeimage: true
-      excludevideo: false
-      path: /data/media/whisparr
+      excludeimage: true
 stash_boxes:
     - apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2ZjAxZjhiNi03YjNjLTQxMjgtYjRiMi1hMGU1ZTdkMzVjMmUiLCJzdWIiOiJBUElLZXkiLCJpYXQiOjE2OTcwNTI2Mzd9.GlNwlK5fLTdSlDf1nOWqvMlmMaPgJwMnq0yDscH5ZxU
       endpoint: https://stashdb.org/graphql

@@ -43,3 +43,4 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+provision/qbittorrent/.bash_history

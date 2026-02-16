@@ -2,6 +2,7 @@
 import builtins
 from pathlib import Path
 import os
+import stat
 import time
 import subprocess
 import sys
@@ -28,15 +29,79 @@ except Exception:
 # Poll interval in seconds (default: 30 minutes)
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", 30 * 60))
 DATA_ROOT = os.getenv("DATA_ROOT")
+TARGET_UID = int(os.environ.get("FIX_PERMS_UID", 1000))
+TARGET_GID = int(os.environ.get("FIX_PERMS_GID", 1000))
+
+# Directories to fix permissions on
+PERMS_DIRS = ["/provision", "/data/torrents-stash"]
+
 if DATA_ROOT:
     (Path(DATA_ROOT) / "torrents-stash/.downloading/").mkdir(parents=True, exist_ok=True)
     (Path(DATA_ROOT) / "torrents-stash/.torrents/").mkdir(parents=True, exist_ok=True)
     (Path(DATA_ROOT) / "torrents-stash/tv-whisparr/").mkdir(parents=True, exist_ok=True)
     (Path(DATA_ROOT) / "torrents-stash/whisparr/").mkdir(parents=True, exist_ok=True)
-    
+
+
+def fix_permissions(dirs=PERMS_DIRS):
+    """Fix ownership and permissions so all containers (UID 1000) can access files.
+
+    - chown everything to TARGET_UID:TARGET_GID
+    - dirs: 2775 (rwxrwsr-x, setgid so new files inherit group)
+    - files: 0664 (rw-rw-r--)
+    Requires CAP_CHOWN, CAP_FOWNER, CAP_DAC_OVERRIDE.
+    """
+    fixed = 0
+    errors = 0
+    for root_dir in dirs:
+        if not os.path.exists(root_dir):
+            continue
+        for dirpath, dirnames, filenames in os.walk(root_dir):
+            # Fix directory
+            try:
+                st = os.stat(dirpath)
+                needs_chown = st.st_uid != TARGET_UID or st.st_gid != TARGET_GID
+                # 2775 = rwxrwsr-x (setgid)
+                needs_chmod = (st.st_mode & 0o7777) != 0o2775
+                if needs_chown:
+                    os.chown(dirpath, TARGET_UID, TARGET_GID)
+                    fixed += 1
+                if needs_chmod:
+                    os.chmod(dirpath, 0o2775)
+                    fixed += 1
+            except OSError as e:
+                errors += 1
+                if errors <= 5:
+                    print(f"[PermFix] Error on dir {dirpath}: {e}")
+
+            # Fix files
+            for fname in filenames:
+                fpath = os.path.join(dirpath, fname)
+                try:
+                    st = os.lstat(fpath)
+                    if stat.S_ISLNK(st.st_mode):
+                        continue
+                    needs_chown = st.st_uid != TARGET_UID or st.st_gid != TARGET_GID
+                    # 0664 = rw-rw-r--
+                    needs_chmod = (st.st_mode & 0o7777) != 0o0664
+                    if needs_chown:
+                        os.chown(fpath, TARGET_UID, TARGET_GID)
+                        fixed += 1
+                    if needs_chmod:
+                        os.chmod(fpath, 0o0664)
+                        fixed += 1
+                except OSError as e:
+                    errors += 1
+                    if errors <= 5:
+                        print(f"[PermFix] Error on file {fpath}: {e}")
+
+    if fixed > 0 or errors > 0:
+        print(f"[PermFix] Done: {fixed} fixes applied, {errors} errors")
+    else:
+        print(f"[PermFix] All permissions OK")
+
 
 class BackgroundPoller(threading.Thread):
-    """Background thread that periodically runs the stash worker."""
+    """Background thread that periodically runs the stash worker and fixes permissions."""
 
     def __init__(self, interval: int = POLL_INTERVAL):
         super().__init__(daemon=True, name="BackgroundPoller")
@@ -54,6 +119,7 @@ class BackgroundPoller(threading.Thread):
                 break
             try:
                 print(f"[BackgroundPoller] Running scheduled scan at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                fix_permissions()
                 stash_worker.main()
                 print(f"[BackgroundPoller] Scheduled scan completed at {time.strftime('%Y-%m-%d %H:%M:%S')}")
             except Exception as e:
@@ -95,12 +161,32 @@ class Watcher:
         self.observer.join()
 
 
+def fix_single_path(path):
+    """Fix ownership/permissions on a single file or directory."""
+    try:
+        st = os.lstat(path)
+        if stat.S_ISLNK(st.st_mode):
+            return
+        if st.st_uid != TARGET_UID or st.st_gid != TARGET_GID:
+            os.chown(path, TARGET_UID, TARGET_GID)
+        if stat.S_ISDIR(st.st_mode):
+            if (st.st_mode & 0o7777) != 0o2775:
+                os.chmod(path, 0o2775)
+        else:
+            if (st.st_mode & 0o7777) != 0o0664:
+                os.chmod(path, 0o0664)
+    except OSError:
+        pass  # best-effort, full fix runs on poll
+
+
 class Handler(FileSystemEventHandler):
     def on_created(self, event: FileSystemEvent):
         if event.is_directory:
             return None
         else:
             print(f"New file created: {event.src_path}")
+            fix_single_path(event.src_path)
+            fix_single_path(os.path.dirname(event.src_path))
             stash_worker.main([event.src_path])
 
     def on_moved(self, event: FileSystemEvent):
@@ -108,6 +194,8 @@ class Handler(FileSystemEventHandler):
             return None
         else:
             print(f"File moved: {event.src_path}")
+            fix_single_path(event.src_path)
+            fix_single_path(os.path.dirname(event.src_path))
             stash_worker.main([event.src_path])
 
     def on_any_event(self, event: FileSystemEvent) -> None:
@@ -161,6 +249,8 @@ class Handler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
+    print("Fixing permissions on startup...")
+    fix_permissions()
     print("running initial worker")
     stash_worker.main()
     print("Starting watcher...")

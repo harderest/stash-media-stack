@@ -60,6 +60,12 @@ services:
       - 6882:6881
       - 6882:6881/udp
     restart: unless-stopped
+    healthcheck:
+      test: curl -f http://localhost:8080/api/v2/app/version || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
     networks:
       - stash
       - public
@@ -228,6 +234,10 @@ services:
       context: ./scripts/stash_watcher
       dockerfile: Dockerfile
     user: "${PUID}:${PGID}"
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
     environment:
       - STASH_API_KEY=${STASH_API_KEY}
       - STASH_BASE_URL=http://stash:9999
@@ -238,6 +248,8 @@ services:
       - TZ=${TZ}
       - POLL_INTERVAL=${POLL_INTERVAL:-1800}
       - DATA_ROOT=/data
+      - FIX_PERMS_UID=${PUID}
+      - FIX_PERMS_GID=${PGID}
     volumes:
       - ./scripts/stash_watcher:/app
       - ./sync_stashdb_to_tpdb_whisparr_stashapp.py:/app/sync_stashdb_to_tpdb_whisparr_stashapp.py:ro
