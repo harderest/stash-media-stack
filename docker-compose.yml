@@ -1,0 +1,280 @@
+name: stash
+
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.3.21
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ}
+    restart: unless-stopped
+    networks:
+      - stash
+      - public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stash-flaresolverr.rule=Host(`stash-flaresolverr.${DOMAIN}`) || Host(`stash-flaresolverr-dev.${DOMAIN}`)"
+      - "traefik.http.routers.stash-flaresolverr.entrypoints=web"
+      - "traefik.http.services.stash-flaresolverr.loadbalancer.server.port=8191"
+      - "traefik.http.routers.stash-flaresolverr.middlewares=common-headers@file"
+
+  # deluge:
+  #   image: lscr.io/linuxserver/deluge:latest
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TZ}
+  #     - UMASK=${UMASK}
+  #     - DELUGE_LOGLEVEL=info
+  #   volumes:
+  #     - ${APPDATA}/deluge/config:/config
+  #     - ${DATA_ROOT}/torrents:/data/torrents
+  #   ports:
+  #     - ${DELUGE_PORT}:8112
+  #     - 6881:6881
+  #     - 6881:6881/udp
+  #     - 58846:58846
+  #   restart: unless-stopped
+  #   networks:
+  #     - stash
+  #     - public
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.stash-deluge.rule=Host(`stash-deluge.${DOMAIN}`) || Host(`stash-deluge-dev.${DOMAIN}`)"
+  #     - "traefik.http.routers.stash-deluge.entrypoints=web"
+  #     - "traefik.http.services.stash-deluge.loadbalancer.server.port=8112"
+  #     - "traefik.http.routers.stash-deluge.middlewares=common-headers@file"
+
+  qbittorrent:
+    image: linuxserver/qbittorrent
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK=${UMASK}
+      - WEBUI_PORT=8080
+    volumes:
+      - ${APPDATA}/qbittorrent:/config
+      - ${DATA_ROOT}/torrents-stash:/data/torrents-stash
+    ports:
+      - ${QBITTORRENT_PORT}:8080
+      - 6882:6881
+      - 6882:6881/udp
+    restart: unless-stopped
+    networks:
+      - stash
+      - public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stash-qbittorrent.rule=Host(`stash-qbittorrent.${DOMAIN}`) || Host(`stash-qbittorrent-dev.${DOMAIN}`)"
+      - "traefik.http.routers.stash-qbittorrent.entrypoints=web"
+      - "traefik.http.services.stash-qbittorrent.loadbalancer.server.port=8080"
+      - "traefik.http.routers.stash-qbittorrent.middlewares=common-headers@file"
+
+  prowlarr:
+    image: linuxserver/prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK=${UMASK}
+    volumes:
+      - ${APPDATA}/prowlarr:/config
+    depends_on:
+      - flaresolverr
+      - qbittorrent
+      # - deluge
+    ports:
+      - ${PROWLARR_PORT}:9696
+    restart: unless-stopped
+    networks:
+      - stash
+      - public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stash-prowlarr.rule=Host(`stash-prowlarr.${DOMAIN}`) || Host(`stash-prowlarr-dev.${DOMAIN}`)"
+      - "traefik.http.routers.stash-prowlarr.entrypoints=web"
+      - "traefik.http.services.stash-prowlarr.loadbalancer.server.port=9696"
+      - "traefik.http.routers.stash-prowlarr.middlewares=common-headers@file"
+
+  # whisparrV1:
+  #   image: thespad/whisparr:0.1.0.53-spad014
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TZ}
+  #     - UMASK=${UMASK}
+  #   ports:
+  #     - ${WHISPARRV1_PORT}:6969
+  #   volumes:
+  #     - ${APPDATA}/whisparrV1:/config
+  #     - ${DATA_ROOT}:/data
+  #   depends_on:
+  #     - prowlarr
+  #     - qbittorrent
+  #     - deluge
+  #   restart: unless-stopped
+  #   networks:
+  #     - stash
+  #     - public
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.whisparrv1.rule=Host(`whisparrv1.${DOMAIN}`) || Host(`whisparrv1-dev.${DOMAIN}`)"
+  #     - "traefik.http.routers.whisparrv1.entrypoints=web"
+  #     - "traefik.http.services.whisparrv1.loadbalancer.server.port=6969"
+  #     - "traefik.http.routers.whisparrv1.middlewares=common-headers@file"
+
+  whisparr:
+    image: ghcr.io/hotio/whisparr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK=${UMASK}
+    ports:
+      - ${WHISPARR_PORT}:6969
+    volumes:
+      - ${APPDATA}/whisparr:/config
+      - ${DATA_ROOT}:/data
+    depends_on:
+      - prowlarr
+      - qbittorrent
+      # - deluge
+    restart: unless-stopped
+    networks:
+      - stash
+      - public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whisparr.rule=Host(`whisparr.${DOMAIN}`) || Host(`whisparr-dev.${DOMAIN}`)"
+      - "traefik.http.routers.whisparr.entrypoints=web"
+      - "traefik.http.services.whisparr.loadbalancer.server.port=6969"
+      - "traefik.http.routers.whisparr.middlewares=common-headers@file"
+
+  # xbvr:
+  #   image: ghcr.io/xbapps/xbvr:latest
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TZ}
+  #   ports:
+  #     - ${XBVR_PORT}:9999
+  #     - 9998:9998
+  #   volumes:
+  #     - ${APPDATA}/xbvr/config:/app/config
+  #     - ${APPDATA}/xbvr/data:/app/data
+  #     - ${DATA_ROOT}:/videos:ro
+  #   restart: unless-stopped
+  #   networks:
+  #     - stash
+  #     - public
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.xbvr.rule=Host(`xbvr.${DOMAIN}`) || Host(`xbvr-dev.${DOMAIN}`)"
+  #     - "traefik.http.routers.xbvr.entrypoints=web"
+  #     - "traefik.http.services.xbvr.loadbalancer.server.port=9999"
+  #     - "traefik.http.routers.xbvr.middlewares=common-headers@file"
+
+  stash:
+    image: stashapp/stash:v0.29.1
+    ports:
+      - ${STASH_PORT}:9999
+    logging:
+      driver: json-file
+      options:
+        max-file: "10"
+        max-size: 2m
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - STASH_STASH=/data/
+      - STASH_GENERATED=/generated/
+      - STASH_METADATA=/metadata/
+      - STASH_CACHE=/cache/
+      - STASH_PORT=9999
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${APPDATA}/stash/config:/root/.stash
+      - ${DATA_ROOT}:/data:ro
+      - ${APPDATA}/stash/metadata:/metadata
+      - ${APPDATA}/stash/cache:/cache
+      - ${APPDATA}/stash/plugins:/root/.stash/plugins
+      - ${APPDATA}/stash/blobs:/blobs
+      - ${REMOTE_APPDATA}/stash/generated:/generated
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - stash
+      - public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stash.rule=Host(`stash.${DOMAIN}`) || Host(`stash-dev.${DOMAIN}`)"
+      - "traefik.http.routers.stash.entrypoints=web"
+      - "traefik.http.services.stash.loadbalancer.server.port=9999"
+      - "traefik.http.routers.stash.middlewares=common-headers@file"
+
+  stash-watcher:
+    build:
+      context: ./scripts/stash_watcher
+      dockerfile: Dockerfile
+    user: "${PUID}:${PGID}"
+    environment:
+      - STASH_API_KEY=${STASH_API_KEY}
+      - STASH_BASE_URL=http://stash:9999
+      - WHISPARR_API_KEY=${WHISPARR_API_KEY}
+      - WHISPARR_BASE_URL=http://whisparr:6969
+      - THEPORNDB_API_KEY=${THEPORNDB_API_KEY}
+      - STASHDB_API_KEY=${STASHDB_API_KEY}
+      - TZ=${TZ}
+      - POLL_INTERVAL=${POLL_INTERVAL:-1800}
+      - DATA_ROOT=/data
+    volumes:
+      - ./scripts/stash_watcher:/app
+      - ./sync_stashdb_to_tpdb_whisparr_stashapp.py:/app/sync_stashdb_to_tpdb_whisparr_stashapp.py:ro
+      - ./provision:/provision
+      - ${DATA_ROOT}:/data
+    command: ["python", "/app/stash_watcher.py"]
+    depends_on:
+      stash:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - stash
+      - public
+
+  # backup-local:
+  #   image: offen/docker-volume-backup:v2.43.2
+  #   user: "${PUID}:${PGID}"
+  #   environment:
+  #     - BACKUP_CRON_EXPRESSION=0 0 * * *
+  #     - BACKUP_FILENAME=backup_%Y%m%d_%H%M%S
+  #     - BACKUP_LATEST_SYMLINK=backup.tar.gz.gpg
+  #     - BACKUP_RETENTION_DAYS=30
+  #     - BACKUP_COMPRESSION_LEVEL=3
+  #     - BACKUP_STOP_CONTAINER=false
+  #     - GPG_PASSPHRASE=${GPG_PASSPHRASE}
+  #     - BACKUP_EXCLUDE_REGEXP=${BACKUP_EXCLUDE_REGEXP}
+  #     - TZ=${TZ}
+  #   volumes:
+  #     - ./:/backup/my-app-backup:ro
+  #     - ${REMOTE_APPDATA}/backups/stash-stack:/archive:rw
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   restart: always
+  #   networks:
+  #     - stash
+
+networks:
+  public:
+    external: true
+  stash:
+    name: stash

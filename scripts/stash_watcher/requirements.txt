@@ -1,0 +1,16 @@
+git+https://github.com/harderest/stashapp-tools.git
+# -e ./stashapp-tools
+requests
+# stashapi
+tqdm
+urllib3
+watchdog
+# Dependencies for sync script
+joblib
+loguru
+wrapt
+backoff
+pyarr
+python-dotenv
+ipywidgets
+beautifulsoup4
