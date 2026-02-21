@@ -126,12 +126,12 @@ exclude:
     - sample\.mp4$
     - sample\.mkv$
 ffmpeg:
-    hardware_acceleration: false
+    hardware_acceleration: true
     transcode:
         input_args: []
         output_args: []
-ffmpeg_path: ""
-ffprobe_path: ""
+ffmpeg_path: /usr/bin/ffmpeg
+ffprobe_path: /usr/bin/ffprobe
 gallery_cover_regex: (poster|cover|folder|board)\.[^\.]+$
 generated: /root/.stash/generated
 host: 0.0.0.0
@@ -167,6 +167,9 @@ plugins:
         - localpath: community
           name: Community (stable)
           url: https://stashapp.github.io/CommunityScripts/stable/index.yml
+        - localpath: null
+          name: Serechops-Stash
+          url: https://serechops.github.io/Serechops-Stash/index.yml
     settings:
         DupFileManager:
             zzObsoleteSettingsCheckVer2: true
@@ -197,18 +200,18 @@ show_one_time_moved_notification: false
 show_studio_as_text: false
 sound_on_preview: true
 stash:
-    - path: /data/torrents-stash/tv-whisparr
+    - excludeimage: true
       excludevideo: true
-      excludeimage: true
-    - path: /data/torrents-stash/whisparr
+      path: /data/torrents-stash/tv-whisparr
+    - excludeimage: true
       excludevideo: true
-      excludeimage: true
-    - path: /data/media/tv-whisparr
+      path: /data/torrents-stash/whisparr
+    - excludeimage: true
       excludevideo: false
-      excludeimage: true
-    - path: /data/media/whisparr
+      path: /data/media/tv-whisparr
+    - excludeimage: true
       excludevideo: false
-      excludeimage: true
+      path: /data/media/whisparr
 stash_boxes:
     - apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2ZjAxZjhiNi03YjNjLTQxMjgtYjRiMi1hMGU1ZTdkMzVjMmUiLCJzdWIiOiJBUElLZXkiLCJpYXQiOjE2OTcwNTI2Mzd9.GlNwlK5fLTdSlDf1nOWqvMlmMaPgJwMnq0yDscH5ZxU
       endpoint: https://stashdb.org/graphql
@@ -274,17 +277,17 @@ ui:
                 displayMode: "2"
                 zoomIndex: "1"
         scenes:
-            findFilter:
+            find_filter:
                 direction: DESC
-                page: "1"
-                perPage: "40"
+                page: 1
+                per_page: 40
                 q: ""
-                sort: created_at
+                sort: date
             mode: SCENES
-            objectFilter: {}
-            uiOptions:
-                displayMode: "0"
-                zoomIndex: "1"
+            object_filter: {}
+            ui_options:
+                display_mode: 0
+                zoom_index: 1
         studios:
             find_filter:
                 direction: DESC
@@ -386,6 +389,7 @@ ui:
                 - "3182"
         markSceneAsOrganizedOnSave: false
         mode: auto
+        selectedEndpoint: https://stashdb.org/graphql
         setCoverImage: true
         setTags: true
         showMales: true
@@ -417,10 +421,11 @@ ui:
                 previewSegments: 12
             previews: true
             sprites: true
-            transcodes: true
+            transcodes: false
         scan:
             scanGenerateClipPreviews: true
             scanGenerateCovers: true
+            scanGenerateImagePhashes: true
             scanGenerateImagePreviews: false
             scanGeneratePhashes: true
             scanGeneratePreviews: true

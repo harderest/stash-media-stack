@@ -181,7 +181,15 @@ services:
   #     - "traefik.http.routers.xbvr.middlewares=common-headers@file"
 
   stash:
-    image: stashapp/stash:v0.29.1
+    # image: stashapp/stash:v0.29.1 # (stable)
+    # Using nvenc-patches image for NVIDIA GPU hardware acceleration (CUDA decode + NVENC encode)
+    # Reduces phash/sprite generation time by 3-5x on 4K content
+    # Source: https://github.com/rufftruffles/stash-nvenc-patches
+    image: ghcr.io/rufftruffles/stash-nvenc-patches:latest
+    # Alternative images if this doesn't work:
+    # image: nerethos/stash:latest  # jellyfin-ffmpeg based
+    # image: stashapp/stash:v0.29.1  # original (no hwaccel)
+    runtime: nvidia
     ports:
       - ${STASH_PORT}:9999
     logging:
@@ -189,13 +197,8 @@ services:
       options:
         max-file: "10"
         max-size: 2m
-    devices:
-      - /dev/nvidia0:/dev/nvidia0
-      - /dev/nvidiactl:/dev/nvidiactl
-      - /dev/nvidia-uvm:/dev/nvidia-uvm
-      - /dev/nvidia-modeset:/dev/nvidia-modeset
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
       - NVIDIA_DRIVER_CAPABILITIES=all
       - STASH_STASH=/data/
       - STASH_GENERATED=/generated/
@@ -203,6 +206,13 @@ services:
       - STASH_CACHE=/cache/
       - STASH_PORT=9999
       - TZ=${TZ}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, video, compute]
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${APPDATA}/stash/config:/root/.stash

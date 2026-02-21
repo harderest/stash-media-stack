@@ -6,7 +6,7 @@
 
 # %%
 # # documentation: https://docs.totaldebug.uk/pyarr/modules/sonarr.html
-import datetime
+from datetime import datetime
 import json
 import os
 import subprocess
